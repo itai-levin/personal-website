@@ -40,19 +40,17 @@
     }
     .header-image {
       position: relative;
-    }
-    .header-image::before {
-        content: ' ';
-        position: relative;
-        display: block;
-        width: 100%;
       height: 50vh;
-      background: url('header_img_dalle.png') no-repeat center center;
-      background-size: cover;
-        opacity: 0.5;
-
-
-
+      overflow: hidden;
+    }
+    .header-image canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+      z-index: 0;
     }
     .header-content {
       position: absolute;
@@ -60,18 +58,28 @@
       left: 50%;
       transform: translate(-50%, -50%);
       text-align: center;
-      color: black;
+    }
+    .header-bg {
+      position: absolute;
       z-index: 1;
-      
-      
-      /* background-color: rgba(255, 255, 255, 0.5); */
+      background-color: #333;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+    }
+    .header-text {
+      position: relative;
+      z-index: 2;
+      color: seashell;
+      padding: 1rem;
     }
     .header-content h1 {
       font-family: 'Oswald', sans-serif;
       font-size: 3rem;
     }
     .header-content .social-icons a {
-      color: black;
+      color: seashell;
       margin: 0 10px;
       font-size: 1.5rem;
     }
@@ -89,6 +97,12 @@
     .publication-tile a:hover {
       text-decoration: underline;
     }
+    .project h5 {
+      margin-top: 0; /* Remove extra top margin for alignment */
+    }
+    .project video {
+      display: block; /* Ensure video renders as block-level element */
+    }
   </style>
 </head>
 <body>
@@ -96,7 +110,8 @@
 <!-- Navigation -->
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
   <div class="container">
-    <a class="navbar-brand" href="#">Itai Levin</a>
+    <!-- Removed navbar-brand with "Itai Levin" -->
+    <!-- <a class="navbar-brand" href="#">Itai Levin</a> -->
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
       <span class="navbar-toggler-icon"></span>
     </button>
@@ -112,13 +127,17 @@
 
 <!-- Header Image -->
 <div class="header-image">
+  <canvas id="meshCanvas"></canvas>
   <div class="header-content">
-    <h1>Itai Levin</h1>
-    <div class="social-icons">
-      <a href="https://www.linkedin.com/in/itai-levin-03488b105/"><i class="fab fa-linkedin"></i></a>
-      <a href="https://scholar.google.com/citations?user=8D6IqL8AAAAJ&hl=en&oi=ao"><i class="fas fa-graduation-cap"></i></a>
-      <a href="https://github.com/itai-levin"><i class="fab fa-github"></i></a>
-      <a href="https://x.com/itai_levin"><i class="fab fa-twitter"></i></a>
+    <div class="header-bg"></div>
+    <div class="header-text">
+      <h1>Itai Levin</h1>
+      <div class="social-icons">
+        <a href="https://www.linkedin.com/in/itai-levin-03488b105/"><i class="fab fa-linkedin"></i></a>
+        <a href="https://scholar.google.com/citations?user=8D6IqL8AAAAJ&hl=en&oi=ao"><i class="fas fa-graduation-cap"></i></a>
+        <a href="https://github.com/itai-levin"><i class="fab fa-github"></i></a>
+        <a href="https://x.com/itai_levin"><i class="fab fa-twitter"></i></a>
+      </div>
     </div>
   </div>
 </div>
@@ -128,7 +147,7 @@
   <div class="row">
     <div class="col-12">
       <p class="mt-3 text-center">
-        I recently completed my Ph.D. at the Department of Biological Engineering at MIT with Chris Voigt and Connor Coley. I am passionate about leveraging computational models to 
+        I recently completed my Ph.D. at the Department of Biological Engineering at MIT. I am passionate about leveraging computational models to 
         push the boundaries of what is possible in chemistry and biology.
       </p>
     </div>
@@ -153,20 +172,24 @@
     </div>
   </div>
 
-  <div class="row mt-5" id="projects">
-    <div class="col-md-12">
-      <h2 class="section-title">Projects</h2>
+  <div class="row mt-5 align-items-start" id="projects">
+    <h2 class="section-title">Projects</h2>
+    <div class="col-md-6">
       <div class="project">
-        <h5><a href="https://voigtlab.github.io/npspec/">Webapp for browsing predicted metabolite spectral properties and biosynthesis routes</a></h5>
+        <!-- Swapped order: video first, then header -->
         <video class="video" width="100%" controls>
           <source src="npspec_demo_video.mov">
         </video>
+        <h5 class="mt-2"><a href="https://voigtlab.github.io/npspec/">Webapp for browsing predicted metabolite spectral properties and biosynthesis routes</a></h5>
       </div>
+    </div>
+    <div class="col-md-6">
       <div class="project">
-        <h5><a href="https://itai-levin.github.io/interactive-biotech-map/index.html">Interactive map of biotech companies in the U.S.</a></h5>
+        <!-- Swapped order: video first, then header -->
         <video class="video" width="100%" controls>
           <source src="interactive_biotech_map.mov">
         </video>
+        <h5 class="mt-2"><a href="https://itai-levin.github.io/interactive-biotech-map/index.html">Interactive map of biotech companies in the U.S.</a></h5>
       </div>
     </div>
   </div>
@@ -177,6 +200,156 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  const canvas = document.getElementById('meshCanvas');
+  const ctx = canvas.getContext('2d');
+  const headerContainer = document.querySelector('.header-image');
+
+  const cols = 30, rows = 20;
+  let mesh = [];
+  function createMesh() {
+    mesh = [];
+    for (let i = 0; i <= cols; i++) {
+      mesh[i] = [];
+      for (let j = 0; j <= rows; j++) {
+        let x = i * canvas.width / cols;
+        let y = j * canvas.height / rows;
+        mesh[i][j] = { x, y, origX: x, origY: y };
+      }
+    }
+  }
+  function resizeCanvas() {
+    canvas.width = headerContainer.clientWidth;
+    canvas.height = headerContainer.clientHeight;
+    createMesh();
+  }
+  window.addEventListener('resize', resizeCanvas);
+  resizeCanvas();
+
+  let time = 0;
+  function updateMesh() {
+    time += 0.02;
+    for (let i = 0; i <= cols; i++) {
+      for (let j = 0; j <= rows; j++) {
+        let offsetX = Math.sin(time + i * 0.5 + j * 0.5) * 10;
+        let offsetY = Math.cos(time + i * 0.5 + j * 0.5) * 10;
+        mesh[i][j].x = mesh[i][j].origX + offsetX;
+        mesh[i][j].y = mesh[i][j].origY + offsetY;
+      }
+    }
+  }
+  function drawMesh() {
+    ctx.strokeStyle = 'rgba(173,216,230,0.5)';
+    ctx.lineWidth = 1;
+    // Draw horizontal lines
+    for (let j = 0; j <= rows; j++) {
+      ctx.beginPath();
+      for (let i = 0; i <= cols; i++) {
+        if (i === 0) ctx.moveTo(mesh[i][j].x, mesh[i][j].y);
+        else ctx.lineTo(mesh[i][j].x, mesh[i][j].y);
+      }
+      ctx.stroke();
+    }
+    // Draw vertical lines
+    for (let i = 0; i <= cols; i++) {
+      ctx.beginPath();
+      for (let j = 0; j <= rows; j++) {
+        if (j === 0) ctx.moveTo(mesh[i][j].x, mesh[i][j].y);
+        else ctx.lineTo(mesh[i][j].x, mesh[i][j].y);
+      }
+      ctx.stroke();
+    }
+  }
+
+  // --- Added Persistent Path Animation Code ---
+  let path = [];
+  let completedPaths = [];
+  let pathAnimationRunning = false;
+
+  function resetPath() {
+    path = [];
+    let startX = Math.floor(Math.random() * (cols - 2)) + 1;
+    let startY = Math.floor(Math.random() * (rows - 2)) + 1;
+    path.push({ i: startX, j: startY });
+    drawPath.currentColor = 'hsl(' + Math.floor(Math.random() * 360) + ', 70%, 50%)';
+    pathAnimationRunning = true;
+  }
+
+  function getNeighbors(cell) {
+    let { i, j } = cell;
+    const neighbors = [];
+    if (j > 0) neighbors.push({ i, j: j - 1 });
+    if (j < rows) neighbors.push({ i, j: j + 1 });
+    if (i > 0) neighbors.push({ i: i - 1, j });
+    if (i < cols) neighbors.push({ i: i + 1, j });
+    return neighbors;
+  }
+
+  function cellInPath(cell) {
+    return path.some(c => c.i === cell.i && c.j === cell.j);
+  }
+
+  function updatePath() {
+    if (!pathAnimationRunning) return;
+    let currentCell = path[path.length - 1];
+    let neighbors = getNeighbors(currentCell).filter(c => !cellInPath(c));
+    if (neighbors.length === 0) {
+      completedPaths.push({ path: path.slice(), color: drawPath.currentColor });
+      pathAnimationRunning = false;
+      setTimeout(resetPath, 1000);
+    } else {
+      let next = neighbors[Math.floor(Math.random() * neighbors.length)];
+      path.push(next);
+      if (next.i === 0 || next.i === cols || next.j === 0 || next.j === rows) {
+        completedPaths.push({ path: path.slice(), color: drawPath.currentColor });
+        pathAnimationRunning = false;
+        setTimeout(resetPath, 1000);
+      }
+    }
+  }
+
+  function drawCompletedPaths() {
+    completedPaths.forEach(item => {
+      if (item.path.length < 2) return;
+      ctx.strokeStyle = item.color;
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      item.path.forEach((cell, index) => {
+        let { x, y } = mesh[cell.i][cell.j];
+        index === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+      });
+      ctx.stroke();
+    });
+  }
+
+  function drawPath() {
+    if (path.length < 2) return;
+    ctx.strokeStyle = drawPath.currentColor;
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    path.forEach((cell, index) => {
+      let { x, y } = mesh[cell.i][cell.j];
+      index === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    });
+    ctx.stroke();
+  }
+
+  // Update animate() to include path drawing
+  function animate() {
+    ctx.fillStyle = "#333";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    updateMesh();
+    drawMesh();
+    drawCompletedPaths();
+    drawPath();
+    requestAnimationFrame(animate);
+  }
+  animate();
+
+  // Initialize the path and update it periodically
+  resetPath();
+  setInterval(() => { if (pathAnimationRunning) updatePath(); }, 150);
+</script>
 </body>
 </html>
 
